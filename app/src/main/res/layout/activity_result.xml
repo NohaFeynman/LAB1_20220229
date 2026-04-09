@@ -7,6 +7,15 @@
     android:gravity="center_horizontal">
 
     <TextView
+        android:id="@+id/tvResultDifficulty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Dificultad: Difícil"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:layout_marginTop="30dp" />
+
+    <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Puntaje Total:"
@@ -15,17 +24,34 @@
 
     <TextView
         android:id="@+id/tvFinalScore"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
         android:text="0"
-        android:textSize="48sp"
-        android:layout_marginTop="24dp" />
+        android:textSize="42sp"
+        android:textStyle="bold" />
 
-    <Button
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Volver a jugar"
-        android:layout_marginTop="32dp"
-        android:onClick="playAgain" />
+        android:layout_marginTop="40dp"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnBackResult"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Anterior" />
+
+        <Button
+            android:id="@+id/btnPlayAgain"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="12dp"
+            android:text="Volver a jugar" />
+    </LinearLayout>
 
 </LinearLayout>

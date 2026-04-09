@@ -5,6 +5,7 @@ import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
+import com.example.lab1_20220229.TimeUtils;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import android.content.Intent;
@@ -19,6 +20,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        if (GameSession.appStartTime.isEmpty()) {
+            GameSession.appStartTime = TimeUtils.getCurrentDateTime();
+        }
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -32,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, "Ingrese su nombre", Toast.LENGTH_SHORT).show();
             return;
         }
-
+        GameSession.playerName = playerName;
         Intent intent = new Intent(this, DifficultyActivity.class);
         intent.putExtra(AppConstants.EXTRA_PLAYER_NAME, playerName);
         startActivity(intent);

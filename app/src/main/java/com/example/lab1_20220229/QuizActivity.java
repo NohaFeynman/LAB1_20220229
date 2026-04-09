@@ -40,6 +40,7 @@ public class QuizActivity extends AppCompatActivity {
     private int hintsUsedTotal;
     private int correctStreak;
     private int incorrectStreak;
+    private int maxCorrectStreakInThisGame;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +96,13 @@ public class QuizActivity extends AppCompatActivity {
         hintsUsedTotal = 0;
         correctStreak = 0;
         incorrectStreak = 0;
+        maxCorrectStreakInThisGame = 0;
+
+        GameSession.currentDifficulty = difficulty;
+        GameSession.currentGameStartTimeText = TimeUtils.getCurrentHourMinute();
+        GameSession.currentGameStartTimeMillis = TimeUtils.getCurrentTimeMillis();
+        GameSession.currentHintsUsed = 0;
+        GameSession.gameInProgress = true;
 
         updateQuestionUI();
     }
@@ -182,6 +190,11 @@ public class QuizActivity extends AppCompatActivity {
         boolean isCorrect = selectedIndex == question.getCorrectIndex();
         question.setCorrect(isCorrect);
 
+        StatsManager.totalAnsweredQuestions++;
+        if (isCorrect) {
+            StatsManager.totalCorrectAnswers++;
+        }
+
         int basePoints = calculateBasePoints(question.getDifficulty(), isCorrect);
         int streakPoints = calculateStreakPoints(isCorrect);
 
@@ -263,11 +276,29 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void goToResult(int finalScore) {
+        String duration = TimeUtils.getElapsedSeconds(GameSession.currentGameStartTimeMillis);
+
+        StatsManager.addFinishedGame(
+                difficulty,
+                GameSession.currentGameStartTimeText,
+                duration,
+                hintsUsedTotal,
+                finalScore
+        );
+
+        if (maxCorrectStreakInThisGame > StatsManager.longestCorrectStreak) {
+            StatsManager.longestCorrectStreak = maxCorrectStreakInThisGame;
+        }
+
+        GameSession.gameInProgress = false;
+
         Intent intent = new Intent(this, ResultActivity.class);
         intent.putExtra(AppConstants.EXTRA_PLAYER_NAME, playerName);
         intent.putExtra(AppConstants.EXTRA_DIFFICULTY, difficulty);
         intent.putExtra(AppConstants.EXTRA_FINAL_SCORE, finalScore);
         startActivity(intent);
+
+        GameSession.resetCurrentGame();
         finish();
     }
 
@@ -282,6 +313,20 @@ public class QuizActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == android.R.id.home) {
+            if (GameSession.gameInProgress) {
+                String duration = TimeUtils.getElapsedSeconds(GameSession.currentGameStartTimeMillis);
+
+                StatsManager.addCancelledGame(
+                        difficulty,
+                        GameSession.currentGameStartTimeText,
+                        duration,
+                        hintsUsedTotal,
+                        totalScore
+                );
+                GameSession.gameInProgress = false;
+                GameSession.resetCurrentGame();
+            }
+
             Intent intent = new Intent(this, DifficultyActivity.class);
             intent.putExtra(AppConstants.EXTRA_PLAYER_NAME, playerName);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -305,6 +350,10 @@ public class QuizActivity extends AppCompatActivity {
         if (isCorrect) {
             correctStreak++;
             incorrectStreak = 0;
+
+            if (correctStreak > maxCorrectStreakInThisGame) {
+                maxCorrectStreakInThisGame = correctStreak;
+            }
 
             if (correctStreak >= 2) {
                 return correctStreak - 1;
@@ -347,6 +396,7 @@ public class QuizActivity extends AppCompatActivity {
 
         hideTwoIncorrectOptions(question);
         btnHint.setEnabled(false);
+        GameSession.currentHintsUsed = hintsUsedTotal;
     }
 
     private void hideTwoIncorrectOptions(Question question) {
