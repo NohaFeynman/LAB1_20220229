@@ -15,6 +15,8 @@ public class Question implements Serializable {
     private boolean answered;
     private int pointsEarned;
     private boolean correct;
+    private boolean hintUsed;
+    private int streakPoints;
 
     public Question(String text, ArrayList<String> options, int correctIndex, String difficulty) {
         this.text = text;
@@ -26,6 +28,9 @@ public class Question implements Serializable {
         this.answered = false;
         this.pointsEarned = 0;
         this.correct = false;
+
+        this.hintUsed = false;
+        this.streakPoints = 0;
     }
 
     public void shuffleOptions() {
@@ -80,5 +85,21 @@ public class Question implements Serializable {
 
     public void setCorrect(boolean correct) {
         this.correct = correct;
+    }
+
+    public boolean isHintUsed() {
+        return hintUsed;
+    }
+
+    public void setHintUsed(boolean hintUsed) {
+        this.hintUsed = hintUsed;
+    }
+
+    public int getStreakPoints() {
+        return streakPoints;
+    }
+
+    public void setStreakPoints(int streakPoints) {
+        this.streakPoints = streakPoints;
     }
 }

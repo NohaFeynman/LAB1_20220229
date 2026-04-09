@@ -37,6 +37,9 @@ public class QuizActivity extends AppCompatActivity {
     private ArrayList<Question> questions;
     private int currentQuestionIndex;
     private int totalScore;
+    private int hintsUsedTotal;
+    private int correctStreak;
+    private int incorrectStreak;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +92,10 @@ public class QuizActivity extends AppCompatActivity {
         currentQuestionIndex = 0;
         totalScore = 0;
 
-        tvHintsInfo.setText("Pistas usadas: 0 de 3");
+        hintsUsedTotal = 0;
+        correctStreak = 0;
+        incorrectStreak = 0;
+
         updateQuestionUI();
     }
 
@@ -121,9 +127,7 @@ public class QuizActivity extends AppCompatActivity {
             }
         });
 
-        btnHint.setOnClickListener(v -> {
-            // La lógica de pistas la agregaremos en la siguiente fase
-        });
+        btnHint.setOnClickListener(v -> useHint());
     }
 
     private void updateQuestionUI() {
@@ -132,6 +136,7 @@ public class QuizActivity extends AppCompatActivity {
         tvDifficulty.setText("Dificultad: " + difficulty);
         tvQuestionCounter.setText("Pregunta " + (currentQuestionIndex + 1) + " de 5");
         tvScore.setText("Puntaje acumulado: " + totalScore);
+        tvHintsInfo.setText("Pistas usadas: " + hintsUsedTotal + " de 3");
         tvQuestion.setText(question.getText());
 
         ArrayList<String> options = question.getOptions();
@@ -142,6 +147,15 @@ public class QuizActivity extends AppCompatActivity {
 
         resetOptionStyles();
 
+        btnOption1.setVisibility(Button.VISIBLE);
+        btnOption2.setVisibility(Button.VISIBLE);
+        btnOption3.setVisibility(Button.VISIBLE);
+        btnOption4.setVisibility(Button.VISIBLE);
+
+        if (question.isHintUsed()) {
+            hideTwoIncorrectOptions(question);
+        }
+
         if (question.isAnswered()) {
             showAnsweredState(question);
         } else {
@@ -151,6 +165,8 @@ public class QuizActivity extends AppCompatActivity {
 
         btnPrevious.setEnabled(currentQuestionIndex > 0);
         btnNext.setEnabled(question.isAnswered());
+
+        btnHint.setEnabled(!question.isAnswered() && !question.isHintUsed() && hintsUsedTotal < 3);
     }
 
     private void answerCurrentQuestion(int selectedIndex) {
@@ -166,15 +182,21 @@ public class QuizActivity extends AppCompatActivity {
         boolean isCorrect = selectedIndex == question.getCorrectIndex();
         question.setCorrect(isCorrect);
 
-        int points = calculateBasePoints(question.getDifficulty(), isCorrect);
-        question.setPointsEarned(points);
+        int basePoints = calculateBasePoints(question.getDifficulty(), isCorrect);
+        int streakPoints = calculateStreakPoints(isCorrect);
 
-        totalScore += points;
+        question.setStreakPoints(streakPoints);
+
+        int totalQuestionPoints = basePoints + streakPoints;
+        question.setPointsEarned(totalQuestionPoints);
+
+        totalScore += totalQuestionPoints;
 
         showAnsweredState(question);
 
         tvScore.setText("Puntaje acumulado: " + totalScore);
         btnNext.setEnabled(true);
+        btnHint.setEnabled(false);
     }
 
     private int calculateBasePoints(String questionDifficulty, boolean isCorrect) {
@@ -195,7 +217,11 @@ public class QuizActivity extends AppCompatActivity {
             tvAnswerStatus.setText("Estado: incorrecta");
         }
 
-        tvQuestionPoints.setText("Puntaje en esta pregunta: " + question.getPointsEarned());
+        String pointsText = "Puntaje en esta pregunta: " + question.getPointsEarned();
+        if (question.getStreakPoints() != 0) {
+            pointsText += " (incluye racha: " + question.getStreakPoints() + ")";
+        }
+        tvQuestionPoints.setText(pointsText);
 
         Button selectedButton = getOptionButtonByIndex(selected);
         Button correctButton = getOptionButtonByIndex(correct);
@@ -273,5 +299,68 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private int calculateStreakPoints(boolean isCorrect) {
+        if (isCorrect) {
+            correctStreak++;
+            incorrectStreak = 0;
+
+            if (correctStreak >= 2) {
+                return correctStreak - 1;
+            } else {
+                return 0;
+            }
+        } else {
+            incorrectStreak++;
+            correctStreak = 0;
+
+            if (incorrectStreak >= 2) {
+                return -(incorrectStreak - 1);
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    private void useHint() {
+        Question question = questions.get(currentQuestionIndex);
+
+        if (question.isAnswered()) {
+            return;
+        }
+
+        if (question.isHintUsed()) {
+            return;
+        }
+
+        if (hintsUsedTotal >= 3) {
+            return;
+        }
+
+        question.setHintUsed(true);
+        hintsUsedTotal++;
+
+        totalScore -= 2;
+        tvScore.setText("Puntaje acumulado: " + totalScore);
+        tvHintsInfo.setText("Pistas usadas: " + hintsUsedTotal + " de 3");
+
+        hideTwoIncorrectOptions(question);
+        btnHint.setEnabled(false);
+    }
+
+    private void hideTwoIncorrectOptions(Question question) {
+        ArrayList<Integer> incorrectIndexes = new ArrayList<>();
+
+        for (int i = 0; i < 4; i++) {
+            if (i != question.getCorrectIndex()) {
+                incorrectIndexes.add(i);
+            }
+        }
+
+        if (incorrectIndexes.size() >= 2) {
+            getOptionButtonByIndex(incorrectIndexes.get(0)).setVisibility(Button.INVISIBLE);
+            getOptionButtonByIndex(incorrectIndexes.get(1)).setVisibility(Button.INVISIBLE);
+        }
     }
 }
